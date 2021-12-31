@@ -77,6 +77,8 @@ export const defMainCmp = (db: DB) => {
       ),
       div({}, `Score: ${getScore(state)}`),
       div({}, `High Score: ${state.highScore}`),
+
+      div({}, `direction queue: ${state.game.directionQueue.join(", ")}`),
     );
   };
 };

@@ -1,6 +1,6 @@
 import { Atom } from "@thi.ng/atom/atom";
 
-export const SPEED_MAX_MS = 500;
+export const SPEED_MAX_MS = 300;
 export const SPEED_MIN_MS = 25;
 
 export type Point = [number, number];
@@ -8,7 +8,8 @@ export type Direction = "n" | "e" | "s" | "w";
 export type Snake = Point[];
 export interface Game {
   shape: [number, number];
-  direction: Direction;
+  directionQueue: Direction[];
+  currentDirection: Direction;
   snake: Snake;
   food: Point[];
   growCount: number;

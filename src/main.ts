@@ -1,22 +1,15 @@
 import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
 import { fromDOMEvent, fromRAF } from "@thi.ng/rstream";
-import { createGame, getTimeNow_ms, restartGame, setDirection, tick } from "./actions";
+import { createGame, pushDirection, restartGame, tick } from "./actions";
 import { Direction, State } from "./api";
 import { defMainCmp } from "./components/mainCmp";
-
-/* 
-
-TODO
-
-- movement system allows for illegal moves, by commiting two legal moves within one tick
-*/
 
 const app = () => {
   const db = defAtom<State>({
     game: createGame(),
     highScore: 0,
-    previousFrame_ms: getTimeNow_ms(),
+    previousFrame_ms: 0,
   });
 
   console.assert(db.deref().game.snake.length > 0);
@@ -29,17 +22,31 @@ const app = () => {
     next: (event) => {
       const state = db.deref();
       if (state.game.areYouWinning) {
-        const direction: Direction | undefined = (
-          {
-            ArrowUp: "n",
-            ArrowRight: "e",
-            ArrowDown: "s",
-            ArrowLeft: "w",
-          } as const
-        )[event.code];
+        let direction: Direction | undefined;
+        switch (event.code) {
+          case "ArrowUp":
+          case "KeyW":
+            direction = "n";
+            break;
+          case "ArrowRight":
+          case "KeyD":
+            direction = "e";
+            break;
+          case "ArrowDown":
+          case "KeyS":
+            direction = "s";
+            break;
+          case "ArrowLeft":
+          case "KeyA":
+            direction = "w";
+            break;
+
+          default:
+            break;
+        }
         if (direction !== undefined) {
           event.preventDefault();
-          setDirection(db, direction);
+          pushDirection(db, direction);
         }
       } else {
         restartGame(db);

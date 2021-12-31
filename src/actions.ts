@@ -1,12 +1,7 @@
 import { last } from "@thi.ng/transducers";
 import { DB, Direction, Game, Point, SPEED_MAX_MS, SPEED_MIN_MS, State } from "./api";
 
-const MOVEMENTS: Record<Direction, Point> = {
-  n: [0, -1],
-  e: [1, 0],
-  s: [0, 1],
-  w: [-1, 0],
-};
+const getTimeNow_ms = () => performance.now();
 
 // only good for negative values up to -max
 const wrap = (value: number, max: number) => (value < 0 ? value + max : value % max);
@@ -34,27 +29,39 @@ const getNextFoodPoint = (state: State): Point | undefined => {
 export const getScore = (state: State) => state.game.snake.length - 1;
 
 export const tick = (db: DB) => {
-  const state = db.deref();
-  const now_ms = getTimeNow_ms();
-  const elapsed_ms = now_ms - state.previousFrame_ms;
-
-  if (elapsed_ms < state.game.tickInterval_ms) {
-    return;
-  }
-
   db.swap((state) => {
+    const now_ms = getTimeNow_ms();
+    const elapsed_ms = now_ms - state.previousFrame_ms;
+
+    if (elapsed_ms < state.game.tickInterval_ms) {
+      return state;
+    }
+
     state.previousFrame_ms = now_ms;
 
     if (state.game.areYouWinning) {
       {
-        // move
-        const oldSnake = state.game.snake;
+        // update direction
+        // ---------------------------------------------------------------------
+        const direction = state.game.directionQueue.shift() ?? state.game.currentDirection;
+        state.game.currentDirection = direction;
 
+        // move
+        // ---------------------------------------------------------------------
+        const oldSnake = state.game.snake;
         state.game.snake = [];
         oldSnake.forEach((point, i, arr) => {
           if (i === 0) {
             // head moves
-            const movement = MOVEMENTS[state.game.direction];
+            const movement = (
+              {
+                n: [0, -1],
+                e: [1, 0],
+                s: [0, 1],
+                w: [-1, 0],
+              } as Record<Direction, Point>
+            )[direction];
+
             const newPoint: Point = [
               wrap(point[0] + movement[0], state.game.shape[0]),
               wrap(point[1] + movement[1], state.game.shape[1]),
@@ -68,6 +75,7 @@ export const tick = (db: DB) => {
         });
 
         // grow
+        // ---------------------------------------------------------------------
         if (state.game.growCount > 0) {
           state.game.snake.push(last(oldSnake));
           state.game.growCount--;
@@ -76,6 +84,7 @@ export const tick = (db: DB) => {
 
       {
         // check for collisions
+        // ---------------------------------------------------------------------
         if (
           state.game.snake.some((pointA, i) =>
             state.game.snake.some((pointB, j) => i !== j && isEqual(pointA, pointB)),
@@ -87,6 +96,8 @@ export const tick = (db: DB) => {
 
       {
         // eat
+        // ---------------------------------------------------------------------
+
         const head = state.game.snake[0];
         const previousFoodCount = state.game.food.length;
 
@@ -115,27 +126,34 @@ const INVALID_DIRECTION_CHANGES: Array<[Direction, Direction]> = [
   ["e", "w"],
 ];
 
-export const setDirection = (db: DB, direction: Direction) => {
-  const state = db.deref();
-  const isValid = !INVALID_DIRECTION_CHANGES.some((pair) =>
-    pair.every((dir) => dir === direction || dir === state.game.direction),
+const isValidDirectionChange = (newDirection: Direction, currentDirection: Direction) =>
+  newDirection !== currentDirection &&
+  !INVALID_DIRECTION_CHANGES.some((pair) =>
+    pair.every((dir) => dir === newDirection || dir === currentDirection),
   );
-  if (isValid) {
-    db.resetIn(["game", "direction"], direction);
+
+export const pushDirection = (db: DB, direction: Direction) => {
+  const state = db.deref();
+
+  const currentDirection = last(state.game.directionQueue) ?? state.game.currentDirection;
+
+  if (isValidDirectionChange(direction, currentDirection)) {
+    db.resetIn(["game", "directionQueue"], state.game.directionQueue.concat([direction]));
   }
 };
 
-export const getTimeNow_ms = () => performance.now();
-
 export const createGame = (): Game => {
-  const size = 10;
-  const head: Point = [(size * 0.5) | 0, (size * 0.5) | 0];
-  const shape: Point = [size, size];
+  const gridLength = 10;
+  const head: Point = [(gridLength * 0.5) | 0, (gridLength * 0.5) | 0];
+  const shape: Point = [gridLength, gridLength];
+
+  const currentDirection = "e";
 
   return {
     shape,
     snake: [head],
-    direction: "e",
+    currentDirection,
+    directionQueue: [currentDirection],
     food: [makePoint(shape)],
     growCount: 0,
     areYouWinning: true,
