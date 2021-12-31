@@ -8,7 +8,7 @@ export const setupInput = (db: DB) => {
   keyboardStream.subscribe({
     next: (event) => {
       const state = db.deref();
-      if (state.game.areYouWinning) {
+      if (state.game.playState === "playing") {
         let direction: Direction | undefined;
         switch (event.code) {
           case "ArrowUp":

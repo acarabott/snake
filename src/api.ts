@@ -6,6 +6,8 @@ export const SPEED_MIN_MS = 25;
 export type Point = [number, number];
 export type Direction = "n" | "e" | "s" | "w";
 export type Snake = Point[];
+export type PlayState = "playing" | "win" | "lose";
+
 export interface Game {
   shape: [number, number];
   directionQueue: Direction[];
@@ -13,7 +15,7 @@ export interface Game {
   snake: Snake;
   food: Point[];
   growCount: number;
-  areYouWinning: boolean;
+  playState: PlayState;
   tickInterval_ms: number;
 }
 

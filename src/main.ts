@@ -1,10 +1,11 @@
 import { defAtom } from "@thi.ng/atom";
 import { start } from "@thi.ng/hdom";
 import { fromRAF } from "@thi.ng/rstream";
-import { createGame, tick } from "./actions";
+import { createGame } from "./actions";
 import { State } from "./api";
 import { defMainCmp } from "./components/mainCmp";
 import { setupInput } from "./setupInput";
+import { tick } from "./tick";
 
 const app = () => {
   const db = defAtom<State>({
@@ -12,8 +13,6 @@ const app = () => {
     highScore: 0,
     previousFrame_ms: 0,
   });
-
-  console.assert(db.deref().game.snake.length > 0);
 
   // user input
   setupInput(db);
