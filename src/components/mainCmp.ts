@@ -1,9 +1,11 @@
 import { ILifecycle } from "@thi.ng/hdom";
 import { canvas } from "@thi.ng/hdom-canvas";
 import { div } from "@thi.ng/hiccup-html/blocks";
+import { fromDOMEvent } from "@thi.ng/rstream";
 import { GestureStream, gestureStream } from "@thi.ng/rstream-gestures";
 import { mapIndexed } from "@thi.ng/transducers";
-import { DB, Point } from "../api";
+import { setDirection } from "../actions";
+import { DB, Direction, Point } from "../api";
 
 export const defMainCmp = (db: DB) => {
   let gestures: GestureStream;
@@ -17,6 +19,25 @@ export const defMainCmp = (db: DB) => {
       gestures = gestureStream(canvasEl, opts);
     },
   };
+
+  const keyboardStream = fromDOMEvent(document.body, "keydown");
+
+  keyboardStream.subscribe({
+    next: (event) => {
+      const direction: Direction | undefined = (
+        {
+          ArrowUp: "n",
+          ArrowRight: "e",
+          ArrowDown: "s",
+          ArrowLeft: "w",
+        } as const
+      )[event.code];
+      if (direction !== undefined) {
+        event.preventDefault();
+        setDirection(db, direction);
+      }
+    },
+  });
 
   return () => {
     const state = db.deref();
@@ -33,13 +54,13 @@ export const defMainCmp = (db: DB) => {
       squareSize,
     ];
 
-    const [width, height] = scalePoint([state.x_count, state.y_count]);
+    const [width, height] = scalePoint(state.shape);
 
     return div({}, [
       canvasEl,
       { width, height, style: { border: "1px black solid" } },
 
-      mapIndexed((i, point) => bodyChunkCCmp(point, i === 0), state.body),
+      mapIndexed((i, point) => bodyChunkCCmp(point, i === 0), state.snake),
     ]);
   };
 };

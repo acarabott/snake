@@ -1,13 +1,12 @@
 import { Atom } from "@thi.ng/atom/atom";
 
 export type Point = [number, number];
+export type Direction = "n" | "e" | "s" | "w";
 
 export interface State {
-  x_count: number;
-  y_count: number;
-
-  // direction: "n" | "e" | "s" | "w";
-  body: Point[];
+  shape: [number, number];
+  direction: Direction;
+  snake: Point[];
   // food: Point[];
 }
 
