@@ -15,14 +15,17 @@ export const setupInput = (db: DB) => {
           case "KeyW":
             direction = "n";
             break;
+
           case "ArrowRight":
           case "KeyD":
             direction = "e";
             break;
+
           case "ArrowDown":
           case "KeyS":
             direction = "s";
             break;
+
           case "ArrowLeft":
           case "KeyA":
             direction = "w";

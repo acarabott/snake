@@ -6,11 +6,11 @@ const getTimeNow_ms = () => performance.now();
 // only good for negative values up to -max
 const wrap = (value: number, max: number) => (value < 0 ? value + max : value % max);
 
-const randomInt = (max: number) => Math.floor(Math.random() * max);
-
 const isEqual = (a: Point, b: Point) => a[0] === b[0] && a[1] === b[1];
 
-const makePoint = (shape: Point): Point => [randomInt(shape[0]), randomInt(shape[1])];
+const randomInt = (max: number) => Math.floor(Math.random() * max);
+
+const randomPoint = (shape: Point): Point => [randomInt(shape[0]), randomInt(shape[1])];
 
 const getNextFoodPoint = (state: State): Point | undefined => {
   const maxFoodCount = state.game.shape[0] * state.game.shape[1] - state.game.snake.length;
@@ -20,7 +20,7 @@ const getNextFoodPoint = (state: State): Point | undefined => {
 
   let point: Point;
   do {
-    point = makePoint(state.game.shape);
+    point = randomPoint(state.game.shape);
   } while ([...state.game.food, ...state.game.snake].some((item) => isEqual(item, point)));
 
   return point;
@@ -154,7 +154,7 @@ export const createGame = (): Game => {
     snake: [head],
     currentDirection,
     directionQueue: [currentDirection],
-    food: [makePoint(shape)],
+    food: [randomPoint(shape)],
     growCount: 0,
     areYouWinning: true,
     tickInterval_ms: SPEED_MAX_MS,
