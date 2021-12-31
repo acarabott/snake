@@ -1,78 +1,82 @@
-import { ILifecycle } from "@thi.ng/hdom";
 import { canvas } from "@thi.ng/hdom-canvas";
 import { div } from "@thi.ng/hiccup-html/blocks";
-import { fromDOMEvent } from "@thi.ng/rstream";
-import { GestureStream, gestureStream } from "@thi.ng/rstream-gestures";
-import { map, mapIndexed } from "@thi.ng/transducers";
+import { fitClamped } from "@thi.ng/math";
+import { map, mapIndexed, reverse } from "@thi.ng/transducers";
 import { add2, mul2 } from "@thi.ng/vectors";
-import { setDirection } from "../actions";
-import { DB, Direction, Point } from "../api";
+import { getScore } from "../actions";
+import { DB, Point, Snake, SPEED_MAX_MS, SPEED_MIN_MS } from "../api";
+
+const scalePoint = (point: Point, squareSize: number): Point =>
+  mul2([], point, [squareSize, squareSize]) as Point;
+
+const snakeCCmp = (snake: Snake, squareSize: number) =>
+  mapIndexed(
+    (i, point) => [
+      "rect",
+      { fill: i === snake.length - 1 ? "red" : "black" },
+      scalePoint(point, squareSize),
+      squareSize,
+      squareSize,
+    ],
+    reverse(snake), // render in reverse so the head is always on top during collisions
+  );
 
 export const defMainCmp = (db: DB) => {
-  let gestures: GestureStream;
-  const canvasEl: ILifecycle = {
-    ...canvas,
-
-    init: (canvasEl: HTMLCanvasElement) => {
-      const opts = {
-        preventScrollOnZoom: true,
-      };
-      gestures = gestureStream(canvasEl, opts);
-    },
-  };
-
-  const keyboardStream = fromDOMEvent(document.body, "keydown");
-
-  keyboardStream.subscribe({
-    next: (event) => {
-      const direction: Direction | undefined = (
-        {
-          ArrowUp: "n",
-          ArrowRight: "e",
-          ArrowDown: "s",
-          ArrowLeft: "w",
-        } as const
-      )[event.code];
-      if (direction !== undefined) {
-        event.preventDefault();
-        setDirection(db, direction);
-      }
-    },
-  });
-
   return () => {
     const state = db.deref();
 
-    const squareSize = 30;
-
-    const scalePoint = (point: Point): Point => mul2([], point, [squareSize, squareSize]) as Point;
-
-    const bodyChunkCCmp = (point: Point, isHead: boolean) => [
-      "rect",
-      { fill: isHead ? "red" : "black" },
-      scalePoint(point),
-      squareSize,
-      squareSize,
-    ];
+    const squareSize = 60;
 
     const foodCCmp = (point: Point) => [
       "circle",
       { fill: "rgb(43, 156, 212)" },
-      add2([], scalePoint(point), [squareSize * 0.5, squareSize * 0.5]),
+      add2([], scalePoint(point, squareSize), [squareSize * 0.5, squareSize * 0.5]),
       squareSize * 0.5,
     ];
 
-    const [width, height] = scalePoint(state.shape);
+    const [width, height] = scalePoint(state.game.shape, squareSize);
 
-    return div({}, [
-      canvasEl,
-      { width, height, style: { border: "1px black solid" } },
+    return div(
+      {},
+      [
+        canvas,
+        { width, height, style: { border: "1px black solid" } },
 
-      // food
-      map((point) => foodCCmp(point), state.food),
-      
-      // snake
-      mapIndexed((i, point) => bodyChunkCCmp(point, i === 0), state.snake),
-    ]);
+        // food
+        map((point) => foodCCmp(point), state.game.food),
+
+        // snake
+        snakeCCmp(state.game.snake, squareSize),
+
+        !state.game.areYouWinning
+          ? [
+              ["rect", { fill: "rgba(0, 0, 0, 0.2)" }, [0, 0], width, height],
+              [
+                "text",
+                {
+                  fill: "rgb(0, 0, 0)",
+                  baseline: "middle",
+                  align: "center",
+                  font: `${(height * 0.1) | 0}px sans-serif `,
+                },
+                [width * 0.5, height * 0.5],
+                "Awww game over!",
+              ],
+            ]
+          : null,
+      ],
+      div(
+        {},
+        `Speed: ${fitClamped(
+          state.game.tickInterval_ms,
+          SPEED_MAX_MS,
+          SPEED_MIN_MS,
+          0,
+          100,
+        ).toFixed(1)}%`,
+      ),
+      div({}, `Score: ${getScore(state)}`),
+      div({}, `High Score: ${state.highScore}`),
+    );
   };
 };
