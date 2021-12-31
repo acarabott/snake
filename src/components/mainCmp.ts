@@ -3,7 +3,7 @@ import { div } from "@thi.ng/hiccup-html/blocks";
 import { getScore, scalePoint } from "../actions";
 import { DB } from "../api";
 import { foodCCmp } from "./foodCCmp";
-import { playStateCCmp } from "./gameOverCCmp";
+import { playStateCCmp } from "./playStateCCmp";
 import { snakeCCmp } from "./snakeCCmp";
 
 export const defMainCmp = (db: DB) => {
@@ -26,10 +26,8 @@ export const defMainCmp = (db: DB) => {
         // snake
         snakeCCmp(state.game.snake, squareSize),
 
-        // game over over lay
-        state.game.playState !== "playing"
-          ? playStateCCmp(state.game.playState, width, height)
-          : null,
+        // play state overlay 
+        playStateCCmp(state.game.playState, width, height),
 
         // debug
         // debugCCmp(state, squareSize),

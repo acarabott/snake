@@ -1,8 +1,15 @@
-export const playStateCCmp = (state: "win" | "lose", width: number, height: number) => {
+import { PlayState } from "../api";
+
+export const playStateCCmp = (playState: PlayState, width: number, height: number) => {
+  if (playState === "playing") {
+    return null;
+  }
+
   const { msg, fill } = {
     win: { msg: "You Win!", fill: "rgba(43, 212, 156, 0.8)" },
     lose: { msg: "Game over, it's just game over!", fill: "rgba(0,0,0,0.4)" },
-  }[state];
+  }[playState];
+  
   return [
     ["rect", { fill }, [0, 0], width, height],
     [
