@@ -7,7 +7,8 @@ export interface State {
   shape: [number, number];
   direction: Direction;
   snake: Point[];
-  // food: Point[];
+  food: Point[];
+  growCount: number;
 }
 
 export type DB = Atom<State>;

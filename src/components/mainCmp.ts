@@ -3,7 +3,8 @@ import { canvas } from "@thi.ng/hdom-canvas";
 import { div } from "@thi.ng/hiccup-html/blocks";
 import { fromDOMEvent } from "@thi.ng/rstream";
 import { GestureStream, gestureStream } from "@thi.ng/rstream-gestures";
-import { mapIndexed } from "@thi.ng/transducers";
+import { map, mapIndexed } from "@thi.ng/transducers";
+import { add2, mul2 } from "@thi.ng/vectors";
 import { setDirection } from "../actions";
 import { DB, Direction, Point } from "../api";
 
@@ -44,7 +45,7 @@ export const defMainCmp = (db: DB) => {
 
     const squareSize = 30;
 
-    const scalePoint = (point: Point): Point => [point[0] * squareSize, point[1] * squareSize];
+    const scalePoint = (point: Point): Point => mul2([], point, [squareSize, squareSize]) as Point;
 
     const bodyChunkCCmp = (point: Point, isHead: boolean) => [
       "rect",
@@ -54,12 +55,23 @@ export const defMainCmp = (db: DB) => {
       squareSize,
     ];
 
+    const foodCCmp = (point: Point) => [
+      "circle",
+      { fill: "rgb(43, 156, 212)" },
+      add2([], scalePoint(point), [squareSize * 0.5, squareSize * 0.5]),
+      squareSize * 0.5,
+    ];
+
     const [width, height] = scalePoint(state.shape);
 
     return div({}, [
       canvasEl,
       { width, height, style: { border: "1px black solid" } },
 
+      // food
+      map((point) => foodCCmp(point), state.food),
+      
+      // snake
       mapIndexed((i, point) => bodyChunkCCmp(point, i === 0), state.snake),
     ]);
   };

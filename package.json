@@ -25,6 +25,7 @@
     "@thi.ng/math": "^5.2.0",
     "@thi.ng/rstream": "^7.2.2",
     "@thi.ng/rstream-gestures": "^4.1.4",
-    "@thi.ng/transducers": "^8.2.0"
+    "@thi.ng/transducers": "^8.2.0",
+    "@thi.ng/vectors": "^7.4.3"
   }
 }
